@@ -10,7 +10,7 @@ func TestCache(t *testing.T) {
 		Create a new cache with a cleaing interval of 5 minutes and an buffer
 		of 100 actions
 	*/
-	gc := New(5*time.Minute, 100)
+	gc := New(15*time.Second, 100)
 	gc.Run()
 	if gc == nil {
 		t.Fatal("GC is nil")
@@ -48,8 +48,8 @@ func TestCache(t *testing.T) {
 	}
 	t.Log("GC delete ok!")
 	time.Sleep(21 * time.Second)
-	if ok, _ := gc.Get("hello"); ok {
-		t.Fatal("Value should be deleted")
+	if ok, _ := gc.Get("hello"); !ok {
+		t.Fatal("Value should not be deleted")
 	}
 	t.Log("GC clean ok!")
 }

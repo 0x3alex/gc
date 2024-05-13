@@ -20,6 +20,7 @@ type (
 	GC struct {
 		data       map[string]*gCObject
 		DefaultTTL time.Duration
+		buffer     int
 		dataChan   chan gcRequestObject
 		terminated chan bool
 	}
@@ -36,7 +37,7 @@ func New(defaultTTL time.Duration, buffer int) *GC {
 	return &GC{
 		data:       make(map[string]*gCObject),
 		DefaultTTL: defaultTTL,
-		dataChan:   make(chan gcRequestObject, buffer),
+		buffer:     buffer,
 	}
 }
 
@@ -74,6 +75,7 @@ func (gc *GC) Get(key string) (bool, any) {
 		responseChan: responseChan,
 	}
 	m := <-responseChan
+	close(responseChan)
 	if m == nil {
 		return false, nil
 	}
@@ -96,6 +98,7 @@ func (gc *GC) delete(gcRequestObject gcRequestObject) {
 }
 
 func (gc *GC) Run() {
+	gc.dataChan = make(chan gcRequestObject, gc.buffer)
 	go func() {
 		cleaner := time.NewTicker(gc.DefaultTTL)
 		for {
@@ -120,6 +123,7 @@ func (gc *GC) Run() {
 
 func (gc *GC) StopCache() {
 	gc.terminated <- true
+	close(gc.dataChan)
 }
 
 func (gc *GC) clean() {
